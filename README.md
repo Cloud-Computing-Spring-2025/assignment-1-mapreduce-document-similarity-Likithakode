@@ -1,172 +1,148 @@
-[![Open in Visual Studio Code](https://classroom.github.com/assets/open-in-vscode-2e0aaae1b6195c2367325f4f02e2d04e9abb55f0b24a779b69b11b9e10269abc.svg)](https://classroom.github.com/online_ide?assignment_repo_id=18219018&assignment_repo_type=AssignmentRepo)
-### **📌 Document Similarity Using Hadoop MapReduce**  
+# **Document Similarity Using Hadoop MapReduce**
 
-#### **Objective**  
-The goal of this assignment is to compute the **Jaccard Similarity** between pairs of documents using **MapReduce in Hadoop**. You will implement a MapReduce job that:  
-1. Extracts words from multiple text documents.  
-2. Identifies which words appear in multiple documents.  
-3. Computes the **Jaccard Similarity** between document pairs.  
-4. Outputs document pairs with similarity **above 50%**.  
+## **Objective**
 
----
+The goal of this assignment is to compute the **Jaccard Similarity** between pairs of documents using **Hadoop MapReduce**. You will implement a MapReduce job that:
 
-### **📥 Example Input**  
-
-You will be given multiple text documents. Each document will contain several words. Your task is to compute the **Jaccard Similarity** between all pairs of documents based on the set of words they contain.  
-
-#### **Example Documents**  
-
-##### **doc1.txt**  
-```
-hadoop is a distributed system
-```
-
-##### **doc2.txt**  
-```
-hadoop is used for big data processing
-```
-
-##### **doc3.txt**  
-```
-big data is important for analysis
-```
+1. Extracts words from multiple text documents.
+2. Identifies which words appear in multiple documents.
+3. Computes the **Jaccard Similarity** between document pairs.
+4. Outputs document pairs with their similarity scores.
 
 ---
 
-# 📏 Jaccard Similarity Calculator
-
-## Overview
-
-The Jaccard Similarity is a statistic used to gauge the similarity and diversity of sample sets. It is defined as the size of the intersection divided by the size of the union of two sets.
-
-## Formula
+## **Jaccard Similarity Overview**
 
 The Jaccard Similarity between two sets A and B is calculated as:
 
 ```
-Jaccard Similarity = |A ∩ B| / |A ∪ B|
+Jaccard Similarity (A, B) = |A ∩ B| / |A ∪ B|
 ```
 
 Where:
-- `|A ∩ B|` is the number of words common to both documents
-- `|A ∪ B|` is the total number of unique words in both documents
 
-## Example Calculation
+- `|A ∩ B|` is the number of words common to both documents.
+- `|A ∪ B|` is the total number of unique words in both documents.
 
-Consider two documents:
- 
-**doc1.txt words**: `{hadoop, is, a, distributed, system}`
-**doc2.txt words**: `{hadoop, is, used, for, big, data, processing}`
+Example Calculation:
 
-- Common words: `{hadoop, is}`
-- Total unique words: `{hadoop, is, a, distributed, system, used, for, big, data, processing}`
-
-Jaccard Similarity calculation:
 ```
-|A ∩ B| = 2 (common words)
-|A ∪ B| = 10 (total unique words)
+Document1: {hadoop, is, a, distributed, system}
+Document2: {hadoop, is, used, for, big, data, processing}
 
-Jaccard Similarity = 2/10 = 0.2 or 20%
-```
+Common words: {hadoop, is} → |A ∩ B| = 2
+Total unique words: {hadoop, is, a, distributed, system, used, for, big, data, processing} → |A ∪ B| = 10
 
-## Use Cases
-
-Jaccard Similarity is commonly used in:
-- Document similarity detection
-- Plagiarism checking
-- Recommendation systems
-- Clustering algorithms
-
-## Implementation Notes
-
-When computing similarity for multiple documents:
-- Compare each document pair
-- Output pairs with similarity > 50%
-
-### **📤 Expected Output**  
-
-The output should show the Jaccard Similarity between document pairs in the following format:  
-```
-(doc1, doc2) -> 60%  
-(doc2, doc3) -> 50%  
+Jaccard Similarity = 2/10 = 0.2 (20%)
 ```
 
 ---
 
-### **🛠 Environment Setup: Running Hadoop in Docker**  
+## **Example Input and Output**
 
-Since we are using **Docker Compose** to run a Hadoop cluster, follow these steps to set up your environment.  
+### **Input Format**
 
-#### **Step 1: Install Docker & Docker Compose**  
-- **Windows**: Install **Docker Desktop** and enable WSL 2 backend.  
-- **macOS/Linux**: Install Docker using the official guide: [Docker Installation](https://docs.docker.com/get-docker/)  
+Each line represents a document and its contents:
 
-#### **Step 2: Start the Hadoop Cluster**  
-Navigate to the project directory where `docker-compose.yml` is located and run:  
-```sh
-docker-compose up -d
-```  
-This will start the Hadoop NameNode, DataNode, and ResourceManager services.  
+```
+Document1 hadoop is a distributed system
+Document2 hadoop is used for big data processing
+Document3 big data is important for analysis
+```
 
-#### **Step 3: Access the Hadoop Container**  
-Once the cluster is running, enter the **Hadoop master node** container:  
-```sh
-docker exec -it hadoop-master /bin/bash
+### **Expected Output**
+
+```
+Document1, Document2 Similarity: 0.20
+Document1, Document3 Similarity: 0.10
+Document2, Document3 Similarity: 0.44
 ```
 
 ---
 
-### **📦 Building and Running the MapReduce Job with Maven**  
+## **Approach & Implementation**
 
-#### **Step 1: Build the JAR File**  
-Ensure Maven is installed, then navigate to your project folder and run:  
+### **Mapper**
+
+1. Reads input lines containing document names and their contents.
+2. Tokenizes words and builds a set of words for each document.
+3. Emits key-value pairs where the key is the document ID, and the value is the set of words.
+
+### **Reducer**
+
+1. Receives document-word set mappings from the Mapper.
+2. Computes Jaccard Similarity between every pair of documents.
+3. Outputs document pairs along with their computed similarity.
+
+---
+
+## **Environment Setup & Execution**
+
+### **Step 1: Setup Hadoop**
+
+Install Hadoop and set up HDFS:
+
+```sh
+hdfs namenode -format
+start-dfs.sh
+start-yarn.sh
+```
+
+### **Step 2: Compile the Java Program**
+
+Use Maven to package the program:
+
 ```sh
 mvn clean package
-```  
-This will generate a JAR file inside the `target` directory.  
+```
 
-#### **Step 2: Copy the JAR File to the Hadoop Container**  
-Move the compiled JAR into the running Hadoop container:  
+### **Step 3: Upload Data to HDFS**
+
 ```sh
-docker cp target/similarity.jar hadoop-master:/opt/hadoop-3.2.1/share/hadoop/mapreduce/similarity.jar
+hdfs dfs -mkdir /input
+hdfs dfs -put local_input_files/* /input/
+```
+
+### **Step 4: Run MapReduce Job**
+
+```sh
+hadoop jar target/similarity.jar DocumentSimilarityDriver /input /output
+```
+
+### **Step 5: Retrieve Results**
+
+```sh
+hdfs dfs -cat /output/part-r-00000
 ```
 
 ---
 
-### **📂 Uploading Data to HDFS**  
+## **Challenges Faced & Solutions**
 
-#### **Step 1: Create an Input Directory in HDFS**  
-Inside the Hadoop container, create the directory where input files will be stored:  
-```sh
-hdfs dfs -mkdir -p /input
-```
+1. **Handling Large Datasets**
 
-#### **Step 2: Upload Dataset to HDFS**  
-Copy your local dataset into the Hadoop cluster’s HDFS:  
-```sh
-hdfs dfs -put /path/to/local/input/* /input/
-```
+   - Used Hadoop's distributed processing to manage large input sizes efficiently.
 
----
+2. **Handling Stopwords and Punctuation**
 
-### **🚀 Running the MapReduce Job**  
+   - Implemented a preprocessing step to remove common stopwords and special characters.
 
-Run the Hadoop job using the JAR file inside the container:  
-```sh
-hadoop jar similarity.jar DocumentSimilarityDriver /input /output_similarity /output_final
-```
+3. **Pairwise Comparison Efficiency**
+
+   - Optimized by avoiding redundant calculations and using combinatorial logic to generate pairs efficiently.
 
 ---
 
-### **📊 Retrieving the Output**  
+## **Conclusion**
 
-To view the results stored in HDFS:  
-```sh
-hdfs dfs -cat /output_final/part-r-00000
-```
+This project successfully implemented **Jaccard Similarity** using **Hadoop MapReduce**. The workflow efficiently computes document similarity, demonstrating how MapReduce can be used for text analysis at scale. The final output provides similarity scores between document pairs, which can be applied in various real-world applications like plagiarism detection and document clustering.
 
-If you want to download the output to your local machine:  
-```sh
-hdfs dfs -get /output_final /path/to/local/output
-```
 ---
+
+## **Submission Details**
+
+- The complete implementation, dataset, and results are committed to the GitHub repository.
+- The repository includes a README with detailed instructions on execution and setup.
+
+
+
